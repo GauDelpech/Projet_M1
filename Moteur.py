@@ -33,10 +33,10 @@ class MoteurCC(object):
 
         while t <= temps_tot:
 
-            ome = moteur.volt_to_speed(um, ome, dt)
+            ome = self.volt_to_speed(um, ome, dt)
             ome_num.append(ome)
 
-            ome_ana.append(moteur.anal_speed(um, t))
+            ome_ana.append(self.anal_speed(um, t))
 
             t += dt
             temps.append(t)
@@ -59,7 +59,7 @@ class Controleur(object):
     def prop(self, p):
         return p*(self.vd-self.va)
 
-    def pi(self, p, i , dt):
+    def pi(self, p, i, dt):
         if i <= 0.00000001:
             sys.exit('erreur i = 0')
 

@@ -1,4 +1,5 @@
 import numpy as np
+from Moteur import Controleur
 
 class Kabuki(object):
 
@@ -34,7 +35,7 @@ class Kabuki(object):
         self.vg = vg
         self.vd = vd
 
-        self.v = (self.rayon / 2)*(self.vd + self.vg)
+        self.v = (self.rayon / 1)*(self.vd + self.vg)
         self.vtheta = (self.rayon/self.ecart)*(self.vd-self.vg)
 
     def new_pos(self, dt):
@@ -54,4 +55,38 @@ class Kabuki(object):
         self.histx = []
         self.histy = []
 
+    def control(self, vtrans, vrot):
+        eps_t = vtrans - self.v
+        eps_r = vrot - self.vtheta
 
+        self.vg = (eps_r - self.ecart*eps_t)/self.rayon
+        self.vd = (eps_r + self.ecart*eps_t)/self.rayon
+
+
+    def rejoidre(self, x_target, y_target, theta_target, speed, dt):
+        alpha = np.arctan2((x_target-self.x), (y_target-self.y))
+
+        if (alpha-self.theta) >= 0:
+            while self.theta != alpha:
+                self.control(0, speed)
+                self.new_pos(dt)
+        else:
+            while self.theta != alpha:
+                self.control(0, -speed)
+                self.new_pos(dt)
+
+        while self.x != x_target and self.y != y_target:
+            self.control(speed,0)
+            self.new_pos(dt)
+
+        if (theta_target-self.theta) >= 0:
+            while self.theta != theta_target:
+                self.control(0, speed)
+                self.new_pos(dt)
+        else:
+            while self.theta != theta_target:
+                self.control(0, -speed)
+                self.new_pos(dt)
+
+        self.set_speed(0, 0)
+        self.new_pos(dt)
