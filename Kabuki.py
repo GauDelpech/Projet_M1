@@ -62,7 +62,6 @@ class Kabuki(object):
         self.vg = (eps_r - self.ecart*eps_t)/self.rayon
         self.vd = (eps_r + self.ecart*eps_t)/self.rayon
 
-
     def rejoidre(self, x_target, y_target, theta_target, speed, dt):
         alpha = np.arctan2((x_target-self.x), (y_target-self.y))
 
@@ -90,3 +89,22 @@ class Kabuki(object):
 
         self.set_speed(0, 0)
         self.new_pos(dt)
+
+    def UDPinstruction(self, ip, port):
+        import socket
+
+        UDP_IP_ADDRESS = ip
+        UDP_PORT_NO = port
+
+        UDPSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        UDPSock.bind((UDP_IP_ADDRESS, UDP_PORT_NO))
+
+        while data != 'exitUDP':
+            data, addr = UDPSock.recvfrom(1024) # On s'attend à ce que data soit un string de la forme "cNb1Nb2" où
+                                                # 1er lettre : "c" ou "v", c = instruction de coordonnées, v instruction de vitesse
+                                                # lettres 2 à 4 est la coordonné en x ou la vitesse de translation
+                                                # lettres 5 à 7 est la coordonné en y ou la vitesse de rotation
+
+            if type(data) is str and len(data) == 7:
+                return data
