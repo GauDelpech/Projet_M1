@@ -56,7 +56,11 @@ def Simul_pi(moteur=MoteurCC(), control=Controleur(), p=10, i=1, pas=0.1, ttot=2
     control.clear()
 
 
+
 moteur = MoteurCC()
+
+#moteur.rep_ind(0, 0.01, 10)
+
 contr = Controleur(10)
 P = 900
 I = 0.1

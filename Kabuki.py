@@ -15,8 +15,8 @@ class Kabuki(object):
         self.v = 0
         self.vtheta = 0
 
-        self.rayon = 1.5  # 37.5
-        self.ecart = 14.06  # 351.5
+        self.rayon = 1.9 #37.5 / 20
+        self.ecart = 17.6 #351.5 / 20
 
         self.histx = [x]
         self.histy = [y]
@@ -35,8 +35,8 @@ class Kabuki(object):
         self.vg = vg
         self.vd = vd
 
-        self.v = (self.rayon / 1)*(self.vd + self.vg)
-        self.vtheta = (self.rayon/self.ecart)*(self.vd-self.vg)
+        self.v = (self.rayon / 2)*(self.vd + self.vg)
+        self.vtheta = (1/2)*(self.rayon/self.ecart)*(self.vd-self.vg)
 
     def new_pos(self, dt):
 
@@ -59,36 +59,64 @@ class Kabuki(object):
         eps_t = vtrans - self.v
         eps_r = vrot - self.vtheta
 
-        self.vg = (eps_r - self.ecart*eps_t)/self.rayon
-        self.vd = (eps_r + self.ecart*eps_t)/self.rayon
+        self.vg += (2*eps_t - self.ecart*eps_r)/(2*self.rayon)
+        self.vd += (2*eps_t + self.ecart*eps_r)/(2*self.rayon)
 
-    def rejoidre(self, x_target, y_target, theta_target, speed, dt):
-        alpha = np.arctan2((x_target-self.x), (y_target-self.y))
+        self.set_speed(self.vg, self.vd)
 
-        if (alpha-self.theta) >= 0:
-            while self.theta != alpha:
-                self.control(0, speed)
-                self.new_pos(dt)
+    def rejoidre(self, x_target, y_target, theta_target, speed, eps):
+        alpha = np.arctan2((y_target-self.y), (x_target-self.x))
+
+        print('_____________________________________')
+
+
+        # if not(x_target-eps < self.x < x_target + eps) or not(y_target-eps < self.y < y_target + eps) and (alpha-self.theta) > eps:
+        #         #     self.control(0, speed)
+        #         #     print('1+')
+        #         # elif not(x_target-eps < self.x < x_target + eps) or not(y_target-eps < self.y < y_target + eps) and (alpha-self.theta) < -eps:
+        #         #     self.control(0, -speed)
+        #         #     print('1-')
+        #         # elif (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
+        #         #     self.control(speed, 0)
+        #         #     print('2')
+        #         #
+        #         # elif (theta_target-self.theta) > eps:
+        #         #     self.control(0, speed)
+        #         #     print('3+')
+        #         # elif (theta_target-self.theta) < -eps:
+        #         #     self.control(0, -speed)
+        #         #     print('3-')
+        #         #
+        #         # else:
+        #         #     self.set_speed(0, 0)
+        #         #     print('4')
+
+        if (x_target-eps < self.x < x_target + eps) or (y_target-eps < self.y < y_target + eps):
+            if (theta_target-self.theta) > eps/5:
+                self.control(0, speed/20)
+                print('3+')
+            elif (theta_target-self.theta) < -eps/5:
+                self.control(0, -speed/20)
+                print('3-')
+            else:
+                self.set_speed(0, 0)
+                print('4')
+        elif (alpha-self.theta) > eps/5:
+            self.control(0, speed/20)
+            print('1+')
+            print('Delta theta:' + str(alpha - self.theta))
+
+        elif (alpha-self.theta) < -eps/5:
+            self.control(0, -speed/20)
+            print('1-')
+            print('Delta theta:' + str(alpha - self.theta))
+
         else:
-            while self.theta != alpha:
-                self.control(0, -speed)
-                self.new_pos(dt)
+            self.control(speed, 0)
+            print('2')
+            print('  delta x  :' + str(x_target - self.x) + '  delta y  :' + str(y_target - self.y))
 
-        while self.x != x_target and self.y != y_target:
-            self.control(speed,0)
-            self.new_pos(dt)
-
-        if (theta_target-self.theta) >= 0:
-            while self.theta != theta_target:
-                self.control(0, speed)
-                self.new_pos(dt)
-        else:
-            while self.theta != theta_target:
-                self.control(0, -speed)
-                self.new_pos(dt)
-
-        self.set_speed(0, 0)
-        self.new_pos(dt)
+        #self.control(trans,rot)
 
     def UDPinstruction(self, ip, port):
         import socket

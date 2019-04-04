@@ -1,22 +1,12 @@
 from Kabuki import Kabuki
-import matplotlib.pyplot as plt
 import pygame
 import sys
 
 
 toto = Kabuki(0, 0)
-toto.set_speed(10, 0)
 
 
-def differe(tortue=Kabuki(), pas=0.1, nb_pas=1000):
-    for i in range(nb_pas):
-        tortue.new_pos(pas)
-
-    plt.plot(tortue.histx, tortue.histy)
-    plt.show()
-
-
-def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000):
+def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000, xcible=1, ycible=1, thetacible=0, speed=15, eps=1):
     pygame.init()
     clock = pygame.time.Clock()
     fenetre = pygame.display.set_mode((1920, 1080), pygame.RESIZABLE)
@@ -30,7 +20,19 @@ def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000):
     while 1:
 
         for i in range(nb_pas):
+            tortue.rejoidre(xcible, ycible, thetacible, speed, eps)
+
+            # print('x1: ' + str(tortue.x))
+            # print('y1: ' + str(tortue.y))
+            #
+            # print('gauche: ' + str(tortue.vg))
+            # print('droite: ' + str(tortue.vd))
+
             tortue.new_pos(pas)
+
+            # print('x: '+str(tortue.histx))
+            # print('y: '+str(tortue.histy))
+            # print('----------------------------------------------')
 
             fenetre.blit(fond, (0, 0))
 
@@ -43,10 +45,10 @@ def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000):
             pygame.draw.circle(fenetre, tortue.color, (int(tortue.x+960), int(tortue.y+540)), int(tortue.ecart))
 
             pygame.display.flip()
-            clock.tick(10)
+            clock.tick(15)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
 
 
-realtime(toto)
+realtime(toto, 0.1, 1000, 20, -15)
