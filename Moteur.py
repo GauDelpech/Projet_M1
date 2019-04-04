@@ -13,11 +13,37 @@ class MoteurCC(object):
         self.j = j
         self.f = f
 
-    def volt_to_speed (self, um, omega, dt):
+        self.i = []
+        self.v = []
+        self.dt = []
+
+    def volt_to_speed(self, um, omega, dt):
         i = (um - self.ke * omega)/self.r
         gamma = self.kc*i
         d_omega = (gamma-self.f*omega)/self.j
         return (dt*d_omega+omega)
+
+    def volt_to_speed2(self, um, omega, dt):
+        if um > 12:
+            um = 12
+
+        i = (um - self.ke * omega)/self.r
+
+        if i > 0.750:
+            i=0.750
+
+        gamma = self.kc*i
+        d_omega = (gamma-self.f*omega)/self.j
+        new_omega = (dt*d_omega+omega)
+
+        if new_omega > (8800*(2*np.pi/60)):
+            new_omega = (8800 * (2 * np.pi / 60))
+
+        self.i.append(i)
+        self.v.append(um)
+        self.dt.append(dt)
+
+        return new_omega
 
     def anal_speed(self, um, t):
         omega = (1-np.exp((-1/self.j)*(self.f+(self.kc*self.ke/self.r))*t))*(self.kc*um/(self.r*self.f+self.kc*self.ke))
@@ -48,6 +74,19 @@ class MoteurCC(object):
         plt.ylabel("Vitesse de rotation (rad/s)")
         plt.show()
 
+    def conso(self):
+        p = 0
+        t = 0
+        batterie = 2.2
+        for k in range(len(self.i)):
+            p += self.i[k]*self.v[k]
+            t += self.dt[k]
+            batterie -= self.i[k]
+
+        batterie = (batterie*100)/2.2
+
+        return [p, t, batterie]
+
 
 class Controleur(object):
 
@@ -72,6 +111,3 @@ class Controleur(object):
 
     def clear(self):
         self.esp = 0
-
-
-

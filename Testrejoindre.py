@@ -22,17 +22,7 @@ def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000, xcible=1, ycible=1, thetacib
         for i in range(nb_pas):
             tortue.rejoidre(xcible, ycible, thetacible, speed, eps)
 
-            # print('x1: ' + str(tortue.x))
-            # print('y1: ' + str(tortue.y))
-            #
-            # print('gauche: ' + str(tortue.vg))
-            # print('droite: ' + str(tortue.vd))
-
             tortue.new_pos(pas)
-
-            # print('x: '+str(tortue.histx))
-            # print('y: '+str(tortue.histy))
-            # print('----------------------------------------------')
 
             fenetre.blit(fond, (0, 0))
 
