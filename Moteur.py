@@ -26,11 +26,15 @@ class MoteurCC(object):
     def volt_to_speed2(self, um, omega, dt):
         if um > 12:
             um = 12
+        elif um < -12:
+            um = -12
 
         i = (um - self.ke * omega)/self.r
 
         if i > 0.750:
-            i=0.750
+            i = 0.750
+        elif i < -0.750:
+            i = -0.750
 
         gamma = self.kc*i
         d_omega = (gamma-self.f*omega)/self.j
@@ -38,6 +42,8 @@ class MoteurCC(object):
 
         if new_omega > (8800*(2*np.pi/60)):
             new_omega = (8800 * (2 * np.pi / 60))
+        elif new_omega < -(8800 * (2 * np.pi / 60)):
+            new_omega = -(8800 * (2 * np.pi / 60))
 
         self.i.append(i)
         self.v.append(um)
