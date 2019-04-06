@@ -6,7 +6,7 @@ import sys
 toto = Kabuki(0, 0)
 
 
-def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000, xcible=1, ycible=1, thetacible=0, speed=10, eps=1):
+def realtime(tortue=Kabuki(), nb_pas=1000, xcible=1, ycible=1, thetacible=0, speed=10, eps=1):
     pygame.init()
     clock = pygame.time.Clock()
     fenetre = pygame.display.set_mode((1920, 1080), pygame.RESIZABLE)
@@ -19,26 +19,26 @@ def realtime(tortue=Kabuki(), pas=0.1, nb_pas=1000, xcible=1, ycible=1, thetacib
 
     while 1:
 
-        for i in range(nb_pas):
-            tortue.rejoidre(xcible, ycible, thetacible, speed, eps)
 
-            tortue.new_pos(pas)
+        tortue.rejoidre(xcible, ycible, thetacible, speed, eps)
 
-            fenetre.blit(fond, (0, 0))
+        tortue.new_pos(pas)
 
-            for j in range(len(tortue.histx)):
-                x = int(tortue.histx[j])
-                y = int(tortue.histy[j])
-                traine.set_at((x+960, y+540), tortue.color)
-                fenetre.blit(traine, (0, 0))
+        fenetre.blit(fond, (0, 0))
 
-            pygame.draw.circle(fenetre, tortue.color, (int(tortue.x+960), int(tortue.y+540)), int(tortue.ecart))
+        for j in range(len(tortue.histx)):
+            x = int(tortue.histx[j])
+            y = int(tortue.histy[j])
+            traine.set_at((x+960, y+540), tortue.color)
+            fenetre.blit(traine, (0, 0))
 
-            pygame.display.flip()
-            clock.tick(15)
+        pygame.draw.circle(fenetre, tortue.color, (int(tortue.x+960), int(tortue.y+540)), int(tortue.ecart))
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT: sys.exit()
+        pygame.display.flip()
+        clock.tick(15)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: sys.exit()
 
 
-realtime(toto, 0.1, 1000, -20, 40)
+realtime(toto, 1000, -20, 0)

@@ -28,6 +28,8 @@ class MoteurCC(object):
             um = 12
         elif um < -12:
             um = -12
+        # print('Moteur :')
+        # print('Um =  '+ str(um))
 
         i = (um - self.ke * omega)/self.r
 
@@ -35,6 +37,8 @@ class MoteurCC(object):
             i = 0.750
         elif i < -0.750:
             i = -0.750
+        #
+        # print('i =  ' + str(i))
 
         gamma = self.kc*i
         d_omega = (gamma-self.f*omega)/self.j
@@ -45,9 +49,13 @@ class MoteurCC(object):
         elif new_omega < -(8800 * (2 * np.pi / 60)):
             new_omega = -(8800 * (2 * np.pi / 60))
 
+        # print('omega =  ' + str(new_omega))
+
         self.i.append(i)
         self.v.append(um)
         self.dt.append(dt)
+
+        # print(' ')
 
         return new_omega
 

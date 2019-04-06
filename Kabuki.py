@@ -26,6 +26,10 @@ class Kabuki(object):
 
         self.moteurg = MoteurCC(1.5506, 0.00151, 0.010913, ((1/830)*(2*np.pi/60)), 0.006609, 0)
         self.moteurd = MoteurCC(1.5506, 0.00151, 0.010913, ((1 / 830) * (2 * np.pi / 60)), 0.006609, 0)
+        self.controlg = Controleur(0,0)
+        self.controld = Controleur(0,0)
+
+        self.mvt = 0
 
     def set_pos(self, x, y, theta):
         self.x = x
@@ -75,29 +79,23 @@ class Kabuki(object):
 
         eps_t = vtrans - self.v
         eps_r = vrot - self.vtheta
-        print('..............')
-        print('Delta translation :  ' + str(eps_t))
-        print('Delta rotation :  ' + str(eps_r))
-
 
         vg += (2 * eps_t - self.ecart * eps_r) / (2 * self.rayon)
         vd += (2 * eps_t + self.ecart * eps_r) / (2 * self.rayon)
 
-        print('Roue gauche :  ' +str(vg))
-        print('Roue droite :  ' + str(vd))
-        print('')
 
-        controlg = Controleur(vg, self.vg)
-        controld = Controleur(vd, self.vd)
+        self.controlg.vd = vg
+        self.controlg.va = self.vg
 
-        ug = controlg.prop(p)#, i, dt)
-        ud = controld.prop(p)#, i, dt)
+        self.controld.vd = vd
+        self.controld.va = self.vd
+
+
+        ug = self.controlg.pi(p, i, dt)
+        ud = self.controld.pi(p, i, dt)
 
         vg = self.moteurg.volt_to_speed2(ug, self.vg, dt)
         vd = self.moteurd.volt_to_speed2(ud, self.vd, dt)
-        print('Roue gauche après pi:  '+str(vg))
-        print('Roue droite après pi:  ' + str(vd))
-        print('..............')
 
         self.set_speed(vg, vd)
 
@@ -106,26 +104,28 @@ class Kabuki(object):
         print('Alpha =  ' + str(alpha))
 
         if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
-            if (theta_target-(self.theta%(2*np.pi))) > eps/5:
+            if (theta_target-self.theta) > eps/5:
                 self.control(0, speed)
 
-            elif (theta_target-(self.theta%(2*np.pi))) < -eps/5:
+            elif (theta_target-self.theta) < -eps/5:
                 self.control(0, -speed)
 
             else:
                 self.set_speed(0, 0)
 
-        elif (alpha-(self.theta)%(2*np.pi)) > (np.pi/2)+eps/5:
+        elif (alpha-self.theta) > (np.pi/2)+eps/5:
             self.control(0, speed)
-            print('Theta =  ' + str(self.theta%(2*np.pi)))
-            print('orientation + :  delta = ' + str(alpha-self.theta%(2*np.pi)))
+
+            print('Theta =  ' + str(self.theta))
+            print('orientation + :  delta = ' + str(alpha-self.theta))
             print('limite sup :  ' + str((np.pi/2)+eps/5))
             print('-------------')
 
-        elif (alpha-(self.theta)%(2*np.pi)) < (np.pi/2)-eps/5:
+        elif (alpha-self.theta) < (np.pi/2)-eps/5:
             self.control(0, -speed)
-            print('Theta =  ' + str(self.theta % (2 * np.pi)))
-            print('orientation - :  delta = ' + str(alpha - self.theta % (2 * np.pi)))
+
+            print('Theta =  ' + str(self.theta))
+            print('orientation - :  delta = ' + str(alpha - self.theta))
             print('limite inf :  ' + str((np.pi / 2) - eps / 5))
             print('-------------')
         else:
@@ -135,52 +135,61 @@ class Kabuki(object):
             print('Delta_y =  ' + str(y_target - self.y))
             print('-------------')
 
-
-
-
-
-
-
-
-    def rejoidre2(self, x_target, y_target, theta_target, speed, eps, p, i, dt):
+    def rejoidre2(self, x_target, y_target, theta_target, eps, p, i, dt):
         alpha = np.arctan2((y_target-self.y), (x_target-self.x))
-
-        print('Alpha =  ' + str(alpha))
 
         if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
 
-            if (theta_target-self.theta%(2*np.pi)) > (np.pi/2)+eps/5:
-                self.control2(0, speed, p, i, dt)
+            if (theta_target-self.theta) > +eps/5:
+                if self.mvt != +3:
+                    self.controlg.clear()
+                    self.controld.clear()
+                self.mvt = +3
 
-            elif (theta_target-self.theta%(2*np.pi)) < (np.pi/2)-eps/5:
-                self.control2(0, -speed, p, i, dt)
+                self.control2(0, theta_target-self.theta, p, i, dt)
+
+            elif (theta_target-self.theta) < -eps/5:
+                if self.mvt != -3:
+                    self.controlg.clear()
+                    self.controld.clear()
+                self.mvt = -3
+
+                self.control2(0, theta_target-self.theta, p, i, dt)
 
             else:
+                if self.mvt != 0:
+                    self.controlg.clear()
+                    self.controld.clear()
+                self.mvt = 0
                 self.control2(0, 0, p, i, dt)
                 print('arrêt')
 
-        elif (alpha-self.theta%(2*np.pi)) > (np.pi/2)+eps/5:
-            self.control2(0, speed, p, i, dt)
-            print('Theta =  ' + str(self.theta%(2*np.pi)))
-            print('orientation + :  delta = ' + str(alpha-self.theta%(2*np.pi)))
-            print('limite sup :  ' + str((np.pi/2)+eps/5))
-            print('-------------')
+        elif (alpha-self.theta) > (np.pi/2)+eps/5:
+            if self.mvt != +1:
+                self.controlg.clear()
+                self.controld.clear()
+            self.mvt=+1
 
-        elif (alpha-self.theta%(2*np.pi)) < (np.pi/2)-eps/5:
-            self.control2(0, -speed, p, i, dt)
-            print('Theta =  ' + str(self.theta % (2 * np.pi)))
-            print('orientation - :  delta = ' + str(alpha - self.theta % (2 * np.pi)))
-            print('limite inf :  ' + str((np.pi / 2) - eps / 5))
-            print('-------------')
+            self.control2(0, alpha-self.theta-(np.pi/2), p, i, dt)
+
+
+        elif (alpha-self.theta) < (np.pi/2)-eps/5:
+            if self.mvt != -1:
+                self.controlg.clear()
+                self.controld.clear()
+            self.mvt=-1
+
+            self.control2(0, alpha-self.theta-(np.pi/2), p, i, dt)
+
+
 
         else:
-            self.control2(speed, 0, p, i, dt)
-            print('tout droit')
-            print('Delta_x =  ' + str(x_target-self.x))
-            print('Delta_y =  ' + str(y_target - self.y))
-            print('-------------')
+            if self.mvt != 2:
+                self.controlg.clear()
+                self.controld.clear()
+            self.mvt = 2
 
-
+            self.control2(np.sqrt((x_target-self.x)**2+(y_target - self.y)**2), 0, p, i, dt)
 
     def UDPinstruction(self, ip, port):
         import socket
