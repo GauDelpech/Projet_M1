@@ -1,4 +1,5 @@
 import numpy as np
+from Moteur import MoteurCC
 from Moteur import Controleur
 
 class Kabuki(object):
@@ -22,6 +23,9 @@ class Kabuki(object):
         self.histy = [y]
 
         self.color = color
+
+        self.moteurg = MoteurCC(1.5506, 0.00151, 0.010913, ((1/830)*(2*np.pi/60)), 0.006609, 0)
+        self.moteurd = MoteurCC(1.5506, 0.00151, 0.010913, ((1 / 830) * (2 * np.pi / 60)), 0.006609, 0)
 
     def set_pos(self, x, y, theta):
         self.x = x
@@ -64,52 +68,70 @@ class Kabuki(object):
 
         self.set_speed(self.vg, self.vd)
 
-    def control2(self, vtrans, vrot):
+    def control2(self, vtrans, vrot, p, i, dt):
 
-        vg = (2*vtrans - self.ecart*vrot)/(2*self.rayon)
-        vd = (2*vtrans + self.ecart*vrot)/(2*self.rayon)
+        vg = 0
+        vd = 0
 
-        return [vg, vd]
+        eps_t = vtrans - self.v
+        eps_r = vrot - self.vtheta
+
+        vg += (2 * eps_t - self.ecart * eps_r) / (2 * self.rayon)
+        vd += (2 * eps_t + self.ecart * eps_r) / (2 * self.rayon)
+
+        controlg = Controleur(vg, self.vg)
+        controld = Controleur(vd, self.vd)
+
+        ug = controlg.pi(p, i, dt)
+        ud = controld.pi(p, i, dt)
+
+        vg = self.moteurg.volt_to_speed2(ug, self.vg, dt)
+        vd = self.moteurd.volt_to_speed2(ud, self.vd, dt)
+
+        self.set_speed(vg, vd)
 
     def rejoidre(self, x_target, y_target, theta_target, speed, eps):
         alpha = np.arctan2((y_target-self.y), (x_target-self.x))
 
-        if (x_target-eps < self.x < x_target + eps) or (y_target-eps < self.y < y_target + eps):
-            if (theta_target-self.theta) > eps/5:
-                self.control(0, speed/20)
 
-            elif (theta_target-self.theta) < -eps/5:
-                self.control(0, -speed/20)
+        if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
+            if (theta_target-(self.theta%(2*np.pi))) > eps/5:
+                self.control(0, speed)
+
+            elif (theta_target-(self.theta%(2*np.pi))) < -eps/5:
+                self.control(0, -speed)
+
             else:
                 self.set_speed(0, 0)
-        elif (alpha-self.theta) > eps/5:
-            self.control(0, speed/20)
 
-        elif (alpha-self.theta) < -eps/5:
-            self.control(0, -speed/20)
+        elif (alpha-(self.theta)) > (np.pi/2)+eps/5:
+            self.control(0, speed)
 
+        elif (alpha-(self.theta)) < (np.pi/2)-eps/5:
+            self.control(0, -speed)
         else:
             self.control(speed, 0)
 
-    def rejoidre2(self, x_target, y_target, theta_target, speed, eps):
+
+    def rejoidre2(self, x_target, y_target, theta_target, speed, eps, p, i, dt):
         alpha = np.arctan2((y_target-self.y), (x_target-self.x))
 
-        if (x_target-eps < self.x < x_target + eps) or (y_target-eps < self.y < y_target + eps):
-            if (theta_target-self.theta) > eps/5:
-                self.control2(0, speed/20)
-            elif (theta_target-self.theta) < -eps/5:
-                self.control2(0, -speed/20)
+        if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
+            if (theta_target-self.theta) > (np.pi/2)+eps/5:
+                self.control2(0, speed, p, i, dt)
+            elif (theta_target-self.theta) < (np.pi/2)-eps/5:
+                self.control2(0, -speed, p, i, dt)
             else:
-                self.set_speed(0, 0)
+                self.control2(0, 0, p, i, dt)
 
-        elif (alpha-self.theta) > eps/5:
-            self.control2(0, speed/20)
+        elif (alpha-self.theta) > (np.pi/2)+eps/5:
+            self.control2(0, speed, p, i, dt)
 
-        elif (alpha-self.theta) < -eps/5:
-            self.control2(0, -speed/20)
+        elif (alpha-self.theta) < (np.pi/2)-eps/5:
+            self.control2(0, -speed, p, i, dt)
 
         else:
-            self.control2(speed, 0)
+            self.control2(speed, 0, p, i, dt)
 
     def UDPinstruction(self, ip, port):
         import socket
