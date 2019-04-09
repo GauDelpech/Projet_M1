@@ -7,7 +7,7 @@ import numpy as np
 toto = Kabuki(0, 0)
 titi = Kabuki(2*toto.ecart, -2*toto.ecart, 0, (0, 255, 0))
 tata = Kabuki(-2*toto.ecart, -2*toto.ecart, 0, (0, 0, 255))
-tort =[toto, titi, tata]
+tort = [toto, titi, tata]
 
 
 def realtime(tortue=[Kabuki()], pas=0.1, eps=1, prop=1, inte=1):
@@ -35,12 +35,12 @@ def realtime(tortue=[Kabuki()], pas=0.1, eps=1, prop=1, inte=1):
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
 
-                xcible = event.pos[0]-960
-                ycible = -event.pos[1]+540
+                xcible = (event.pos[0]-960)*20
+                ycible = (-event.pos[1]+540)*20
 
                 alpha = np.arctan2(ycible - tortue[0].y, xcible - tortue[0].x)
 
-        pygame.draw.circle(cible, (0, 0, 255), (xcible+960, -ycible+540), 5)
+        pygame.draw.circle(cible, (0, 0, 255), (int(xcible/20+960), int(-ycible/20+540)), 5)
         fenetre.blit(cible, (0, 0))
 
         tortue[0].rejoidre2(xcible, ycible, tortue[0].theta, eps, prop, inte, pas)
@@ -59,10 +59,10 @@ def realtime(tortue=[Kabuki()], pas=0.1, eps=1, prop=1, inte=1):
             #     traine.set_at((x+960, y+540), tortue[k].color)
             #     fenetre.blit(traine, (0, 0))
 
-            pygame.draw.circle(fenetre, tortue[k].color, (int(tortue[k].x+960), int(-tortue[k].y+540)), int(tortue[k].ecart))
+            pygame.draw.circle(fenetre, tortue[k].color, (int(tortue[k].x/20+960), int(-tortue[k].y/20+540)), int(tortue[k].ecart/20))
 
         pygame.display.flip()
-        clock.tick(15)
+        clock.tick(30)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()

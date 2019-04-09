@@ -16,8 +16,8 @@ class Kabuki(object):
         self.v = 0
         self.vtheta = 0
 
-        self.rayon = 1.9 #37.5 / 20
-        self.ecart = 17.6 #351.5 / 20
+        self.rayon = 37.5
+        self.ecart = 351.5
 
         self.histx = [x]
         self.histy = [y]
@@ -74,14 +74,11 @@ class Kabuki(object):
 
     def control2(self, vtrans, vrot, p, i, dt):
 
-        vg = 0
-        vd = 0
-
         eps_t = vtrans - self.v
         eps_r = vrot - self.vtheta
 
-        vg += (2 * eps_t - self.ecart * eps_r) / (2 * self.rayon)
-        vd += (2 * eps_t + self.ecart * eps_r) / (2 * self.rayon)
+        vg = (2 * eps_t - self.ecart * eps_r) / (2 * self.rayon)
+        vd = (2 * eps_t + self.ecart * eps_r) / (2 * self.rayon)
 
 
         self.controlg.vd = vg
@@ -140,7 +137,7 @@ class Kabuki(object):
 
         if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
 
-            if (theta_target-self.theta) > +eps/5:
+            if (theta_target-self.theta) > +eps/10:
                 if self.mvt != +3:
                     self.controlg.clear()
                     self.controld.clear()
@@ -148,7 +145,7 @@ class Kabuki(object):
 
                 self.control2(0, theta_target-self.theta, p, i, dt)
 
-            elif (theta_target-self.theta) < -eps/5:
+            elif (theta_target-self.theta) < -eps/10:
                 if self.mvt != -3:
                     self.controlg.clear()
                     self.controld.clear()
@@ -164,7 +161,7 @@ class Kabuki(object):
                 self.control2(0, 0, p, i, dt)
                 print('arrêt')
 
-        elif (alpha-self.theta) > (np.pi/2)+eps/5:
+        elif (alpha-self.theta) > (np.pi/2)+eps/10:
             if self.mvt != +1:
                 self.controlg.clear()
                 self.controld.clear()
@@ -173,7 +170,7 @@ class Kabuki(object):
             self.control2(0, alpha-self.theta-(np.pi/2), p, i, dt)
 
 
-        elif (alpha-self.theta) < (np.pi/2)-eps/5:
+        elif (alpha-self.theta) < (np.pi/2)-eps/10:
             if self.mvt != -1:
                 self.controlg.clear()
                 self.controld.clear()

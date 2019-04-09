@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-
 class MoteurCC(object):
 
     def __init__(self, r=1, l=0.001, kc=0.01, ke=0.01, j=0.01, f=0.1):
@@ -13,12 +12,13 @@ class MoteurCC(object):
         self.j = j
         self.f = f
 
-        self.i = []
-        self.v = []
-        self.dt = []
+        self.i = [0]
+        self.v = [0]
+        self.dt = [0]
 
     def volt_to_speed(self, um, omega, dt):
-        i = (um - self.ke * omega)/self.r
+        i = (um - self.ke * omega + self.l * ((self.i[-1])/dt)) / (self.r + self.l/dt)
+        self.i.append(i)
         gamma = self.kc*i
         d_omega = (gamma-self.f*omega)/self.j
         return (dt*d_omega+omega)
@@ -28,17 +28,13 @@ class MoteurCC(object):
             um = 12
         elif um < -12:
             um = -12
-        # print('Moteur :')
-        # print('Um =  '+ str(um))
 
-        i = (um - self.ke * omega)/self.r
+        i = (um - self.ke * omega + self.l * ((self.i[-1])/dt)) / (self.r + self.l/dt)
 
         if i > 0.750:
             i = 0.750
         elif i < -0.750:
             i = -0.750
-        #
-        # print('i =  ' + str(i))
 
         gamma = self.kc*i
         d_omega = (gamma-self.f*omega)/self.j
@@ -49,13 +45,9 @@ class MoteurCC(object):
         elif new_omega < -(8800 * (2 * np.pi / 60)):
             new_omega = -(8800 * (2 * np.pi / 60))
 
-        # print('omega =  ' + str(new_omega))
-
         self.i.append(i)
         self.v.append(um)
         self.dt.append(dt)
-
-        # print(' ')
 
         return new_omega
 
@@ -65,10 +57,10 @@ class MoteurCC(object):
 
     def rep_ind(self, omega_init, dt, temps_tot):
         um = 1
-        t=0
+        t = 0
         temps = [t]
         ome_num = [omega_init]
-        ome_ana = [omega_init]
+        ome_ana = []
         ome=omega_init
 
         while t <= temps_tot:
@@ -81,9 +73,12 @@ class MoteurCC(object):
             t += dt
             temps.append(t)
 
-        plt.plot(temps, ome_ana, 'b')
-        plt.plot(temps, ome_num, 'r')
-        plt.title("Vitesse de rotation calculée analytiquement (bleu) et numériquement (rouge)")
+        ome_ana.append(self.anal_speed(um, t+dt))
+
+        plt.plot(temps, ome_ana, 'b', label='Calcul analytique')
+        plt.plot(temps, ome_num, 'r', label='Calcul numérique')
+        plt.title("Simulation du moteur à courant continu (pas de " + str(dt) +")")
+        plt.legend()
         plt.xlabel("temps (s)")
         plt.ylabel("Vitesse de rotation (rad/s)")
         plt.show()
@@ -107,18 +102,19 @@ class Controleur(object):
     def __init__(self, vitesse_desiree=0, vitesse_actuelle=0):
         self.va = vitesse_actuelle
         self.vd = vitesse_desiree
-        self.esp = self.vd-self.va
+        self.esp = 0
 
     def prop(self, p):
         return p*(self.vd-self.va)
 
     def pi(self, p, i, dt):
-        if i <= 0.00000001:
+
+        if i <= 0:        # évite division par 0
             sys.exit('erreur i = 0')
 
         prop = self.vd - self.va
 
-        self.esp += (self.vd - self.va)
+        self.esp += (self.vd - self.va)  # somme de l'erreur (intégral)
         inte = (dt/i)*self.esp
 
         return p*(prop + inte)
