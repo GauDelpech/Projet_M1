@@ -16,8 +16,8 @@ class Kabuki(object):
         self.v = 0
         self.vtheta = 0
 
-        self.rayon = 37.5
-        self.ecart = 351.5
+        self.rayon = 37.5*0.001
+        self.ecart = 351.5*0.001
 
         self.histx = [x]
         self.histy = [y]
@@ -31,106 +31,87 @@ class Kabuki(object):
 
         self.mvt = 0
 
-    def set_pos(self, x, y, theta):
-        self.x = x
-        self.y = y
-        self.theta = theta
-
-    def get_pos(self):
-        return [self.x, self.y, self.theta]
+    # def set_pos(self, x, y, theta):
+    #     self.x = x
+    #     self.y = y
+    #     self.theta = theta
+    #
+    # def get_pos(self):
+    #     return [self.x, self.y, self.theta]
 
     def set_speed(self, vg, vd):
         self.vg = vg
         self.vd = vd
 
-        self.v = (self.rayon / 2)*(self.vd + self.vg)
-        self.vtheta = (1/2)*(self.rayon/self.ecart)*(self.vd-self.vg)
+        self.v = (self.rayon/2)*(self.vd + self.vg)
+        self.vtheta = (self.rayon/self.ecart)*(self.vd-self.vg)
 
     def new_pos(self, dt):
 
         self.theta += self.vtheta*dt
 
-        vx = self.v*(-np.sin(self.theta))
-        vy = self.v*np.cos(self.theta)
+        vx = self.v*(-np.sin(self.theta))  # nouvelle vitesse en x
+        vy = self.v*np.cos(self.theta)  # nouvelle vitesse en y
 
         self.x += vx*dt
         self.y += vy*dt
 
-        self.histx.append(self.x)
+        self.histx.append(self.x)  # enregistrement
         self.histy.append(self.y)
+
+    def control(self, vtrans, vrot):
+
+        self.vg = (vtrans - ((self.ecart*vrot)/2))/self.rayon
+        self.vd = (vtrans + ((self.ecart*vrot)/2))/self.rayon
+
+        self.set_speed(self.vg, self.vd)
 
     def clear(self):
         self.histx = []
         self.histy = []
 
-    def control(self, vtrans, vrot):
-        eps_t = vtrans - self.v
-        eps_r = vrot - self.vtheta
-
-        self.vg += (2*eps_t - self.ecart*eps_r)/(2*self.rayon)
-        self.vd += (2*eps_t + self.ecart*eps_r)/(2*self.rayon)
-
-        self.set_speed(self.vg, self.vd)
-
     def control2(self, vtrans, vrot, p, i, dt):
 
-        eps_t = vtrans - self.v
-        eps_r = vrot - self.vtheta
+        vg = (vtrans - ((self.ecart*vrot)/2))/self.rayon # MCI
+        vd = (vtrans + ((self.ecart*vrot)/2))/self.rayon
 
-        vg = (2 * eps_t - self.ecart * eps_r) / (2 * self.rayon)
-        vd = (2 * eps_t + self.ecart * eps_r) / (2 * self.rayon)
-
-
-        self.controlg.vd = vg
+        self.controlg.vd = vg  # On applique les valeurs aux controleurs
         self.controlg.va = self.vg
 
-        self.controld.vd = vd
+        self.controld.vd = vd  # On applique les valeurs aux controleurs
         self.controld.va = self.vd
 
 
-        ug = self.controlg.pi(p, i, dt)
+        ug = self.controlg.pi(p, i, dt)  # PI donne la tension pour le moteur
         ud = self.controld.pi(p, i, dt)
 
-        vg = self.moteurg.volt_to_speed2(ug, self.vg, dt)
+        vg = self.moteurg.volt_to_speed2(ug, self.vg, dt)  # Calcul de la nouvelle vitesse
         vd = self.moteurd.volt_to_speed2(ud, self.vd, dt)
 
-        self.set_speed(vg, vd)
+        self.set_speed(vg, vd) # Application de la vitesse
 
-    def rejoidre(self, x_target, y_target, theta_target, speed, eps):
-        alpha = np.arctan2((y_target-self.y), (x_target-self.x))
-        print('Alpha =  ' + str(alpha))
+    def rejoidre(self, x_target, y_target, theta_target, eps):
+        alpha = np.arctan2((y_target-self.y), (x_target-self.x))    # Calcul de l'angle entre l'horizontal et la cible
 
-        if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps):
-            if (theta_target-self.theta) > eps/5:
-                self.control(0, speed)
+        if (x_target-eps < self.x < x_target + eps) and (y_target-eps < self.y < y_target + eps): # Si le robot est sur la cible
+            if (theta_target-self.theta) > eps/10:  # Si le robot est mal orienté positivement par rapport à theta_target, il s'oriente
+                self.control(0, theta_target-self.theta)
 
-            elif (theta_target-self.theta) < -eps/5:
-                self.control(0, -speed)
+            elif (theta_target-self.theta) < -eps/10:  # Si le robot est mal orienté négativement par rapport à theta_target, il s'oriente
+                self.control(0, theta_target-self.theta)
 
-            else:
-                self.set_speed(0, 0)
+            else:   # Si le robot est bien orienté, il s'arrête
+                self.control(0, 0)
 
-        elif (alpha-self.theta) > (np.pi/2)+eps/5:
-            self.control(0, speed)
+        # Si le robot n'est pas encore sur la cible
+        elif (alpha-self.theta) > (np.pi/2)+eps/10:  # Si le robot est mal orienté positivement par rapport à la cible, il s'oriente
+            self.control(0, alpha-self.theta-(np.pi/2))
 
-            print('Theta =  ' + str(self.theta))
-            print('orientation + :  delta = ' + str(alpha-self.theta))
-            print('limite sup :  ' + str((np.pi/2)+eps/5))
-            print('-------------')
+        elif (alpha-self.theta) < (np.pi/2)-eps/10:  # Si le robot est mal orienté négativement par rapport à la cible, il s'oriente
+            self.control(0, alpha-self.theta-(np.pi/2))
 
-        elif (alpha-self.theta) < (np.pi/2)-eps/5:
-            self.control(0, -speed)
-
-            print('Theta =  ' + str(self.theta))
-            print('orientation - :  delta = ' + str(alpha - self.theta))
-            print('limite inf :  ' + str((np.pi / 2) - eps / 5))
-            print('-------------')
-        else:
-            self.control(speed, 0)
-            print('tout droit')
-            print('Delta_x =  ' + str(x_target-self.x))
-            print('Delta_y =  ' + str(y_target - self.y))
-            print('-------------')
+        else:  # Si le robot est bien orienté par rapport à la cible, il avance tout droit
+            self.control(np.sqrt((x_target-self.x)**2+(y_target - self.y)**2), 0)
 
     def rejoidre2(self, x_target, y_target, theta_target, eps, p, i, dt):
         alpha = np.arctan2((y_target-self.y), (x_target-self.x))
@@ -159,7 +140,6 @@ class Kabuki(object):
                     self.controld.clear()
                 self.mvt = 0
                 self.control2(0, 0, p, i, dt)
-                print('arrêt')
 
         elif (alpha-self.theta) > (np.pi/2)+eps/10:
             if self.mvt != +1:
@@ -169,7 +149,6 @@ class Kabuki(object):
 
             self.control2(0, alpha-self.theta-(np.pi/2), p, i, dt)
 
-
         elif (alpha-self.theta) < (np.pi/2)-eps/10:
             if self.mvt != -1:
                 self.controlg.clear()
@@ -177,8 +156,6 @@ class Kabuki(object):
             self.mvt=-1
 
             self.control2(0, alpha-self.theta-(np.pi/2), p, i, dt)
-
-
 
         else:
             if self.mvt != 2:
@@ -195,14 +172,21 @@ class Kabuki(object):
         UDP_PORT_NO = port
 
         UDPSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Création du socket
 
         UDPSock.bind((UDP_IP_ADDRESS, UDP_PORT_NO))
+        # liaison du socket à l'ip et au port
 
-        while data != 'exitUDP':
-            data, addr = UDPSock.recvfrom(1024) # On s'attend à ce que data soit un string de la forme "cNb1Nb2" où
-                                                # 1er lettre : "c" ou "v", c = instruction de coordonnées, v instruction de vitesse
-                                                # lettres 2 à 4 est la coordonné en x ou la vitesse de translation
-                                                # lettres 5 à 7 est la coordonné en y ou la vitesse de rotation
+        data = 'none'
 
-            if type(data) is str and len(data) == 7:
+        while data != 'exitUDP':  # si le message est 'exitUDP' on arrête l'écoute
+
+            data, addr = UDPSock.recvfrom(1024)  #Ecoute
+
+            # On s'attend à ce que data soit un string de la forme "cNb1Nb2" où
+            # 1er lettre : "c" ou "v", c = instruction de coordonnées, v instruction de vitesse
+            # lettres 2 à 4 est la coordonné en x ou la vitesse de translation
+            # lettres 5 à 7 est la coordonné en y ou la vitesse de rotation
+
+            if type(data) is str and len(data) == 7:  # vérification du format de l'information
                 return data

@@ -24,14 +24,14 @@ class MoteurCC(object):
         return (dt*d_omega+omega)
 
     def volt_to_speed2(self, um, omega, dt):
-        if um > 12:
+        if um > 12:  # Tension nominale de 12V
             um = 12
         elif um < -12:
             um = -12
 
         i = (um - self.ke * omega + self.l * ((self.i[-1])/dt)) / (self.r + self.l/dt)
 
-        if i > 0.750:
+        if i > 0.750:  # Courant nominal de 0.750A
             i = 0.750
         elif i < -0.750:
             i = -0.750
@@ -40,12 +40,12 @@ class MoteurCC(object):
         d_omega = (gamma-self.f*omega)/self.j
         new_omega = (dt*d_omega+omega)
 
-        if new_omega > (8800*(2*np.pi/60)):
+        if new_omega > (8800*(2*np.pi/60)):  # Vitesse nominale de 8800 rpm
             new_omega = (8800 * (2 * np.pi / 60))
         elif new_omega < -(8800 * (2 * np.pi / 60)):
             new_omega = -(8800 * (2 * np.pi / 60))
 
-        self.i.append(i)
+        self.i.append(i)  # Utilisé pour la consomation
         self.v.append(um)
         self.dt.append(dt)
 
@@ -87,10 +87,11 @@ class MoteurCC(object):
         p = 0
         t = 0
         batterie = 2.2
+
         for k in range(len(self.i)):
-            p += self.i[k]*self.v[k]
-            t += self.dt[k]
-            batterie -= self.i[k]
+            p += abs(self.i[k]*self.v[k])  # Puissance
+            t += self.dt[k]  # temps
+            batterie -= abs(self.i[k])
 
         batterie = (batterie*100)/2.2
 
