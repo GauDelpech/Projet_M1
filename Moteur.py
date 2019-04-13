@@ -116,6 +116,7 @@ class Controleur(object):
         prop = self.vd - self.va
 
         self.esp += (self.vd - self.va)  # somme de l'erreur (intégral)
+
         inte = (dt/i)*self.esp
 
         return p*(prop + inte)

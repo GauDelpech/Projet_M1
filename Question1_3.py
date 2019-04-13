@@ -42,7 +42,7 @@ def Simul_pi(moteur=MoteurCC(), control=Controleur(), p=10, i=1, pas=0.1, ttot=2
         omega = moteur.volt_to_speed(um, omega, dt)
         ome.append(omega)
 
-        control = Controleur(control.vd, omega)
+        control.va = omega
         t += pas
         temps.append(t)
         val_des.append(control.vd)
@@ -62,7 +62,7 @@ moteur = MoteurCC()
 contr = Controleur(10)
 
 P = 500
-I = 0.01
+I = 0.1
 dt = 0.000001
 ttot = 0.025
 

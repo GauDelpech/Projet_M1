@@ -65,7 +65,6 @@ def realtime(tortue=[Kabuki()], pas=0.1, eps=1., prop=1., inte=1.):
         pygame.display.flip()
         clock.tick(30)
 
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
 

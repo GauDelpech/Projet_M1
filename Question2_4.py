@@ -15,7 +15,6 @@ while instruction != 'exitUDP':
         tortue.rejoidre(int(instruction[1:3]), int(instruction[4:6]), 0, eps)
 
 
-
         i = 0
         pas = 0.1
 

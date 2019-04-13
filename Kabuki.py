@@ -81,7 +81,6 @@ class Kabuki(object):
         self.controld.vd = vd  # On applique les valeurs aux controleurs
         self.controld.va = self.vd
 
-
         ug = self.controlg.pi(p, i, dt)  # PI donne la tension pour le moteur
         ud = self.controld.pi(p, i, dt)
 

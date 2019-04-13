@@ -4,8 +4,6 @@ import pygame
 import sys
 
 
-
-
 toto = Kabuki(0, 0)
 
 
